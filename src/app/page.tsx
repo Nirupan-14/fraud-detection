@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { CreditCard, Clock, MapPin, Building, Lock, Shield, AlertTriangle, CheckCircle, Unlock, Eye, EyeOff } from 'lucide-react';
+import { CreditCard, Clock, MapPin, Building, Lock, Shield, AlertTriangle, CheckCircle, Unlock, Eye } from 'lucide-react';
 
 export default function Home() {
   const [formData, setFormData] = useState({
@@ -10,37 +10,39 @@ export default function Home() {
     geographicalLocation: ''
   });
   
-  const [encryptedData, setEncryptedData] = useState({ encryptedFields: null, fullEncrypted: '' });
   const [showEncrypted, setShowEncrypted] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [fraudResult, setFraudResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [encryptLoading, setEncryptLoading] = useState(false);
   const [fraudLoading, setFraudLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [fraudResult, setFraudResult] = useState<FraudResult | null>(null);
 
-  const handleInputChange = (e) => {
+
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
+  
 
   const isFormValid = () => Object.values(formData).every(v => v.trim() !== '');
 
   const generateEncryptedData = () => {
     // Simple "reverse string" encryption with 4-char salt
-    const reverseStringWithSalt = (value) => {
+    const reverseStringWithSalt = (value: string): string => {
       const reversed = value.split('').reverse().join('');
-      return  reversed;
+      return reversed;
     };
   
     const encryptedFields = {
-      amount: 'aq' + reverseStringWithSalt(formData.transactionAmount) +'qa',
-      timestamp:'bz' +  reverseStringWithSalt(formData.timestamp) +'bz',
-      merchantId: 'cz' +  reverseStringWithSalt(formData.merchantId) +'cz',
-      location: 'dc' +  reverseStringWithSalt(formData.geographicalLocation) +'cd'
+      amount: 'aq' + reverseStringWithSalt(formData.transactionAmount) + 'qa',
+      timestamp: 'bz' + reverseStringWithSalt(formData.timestamp) + 'bz',
+      merchantId: 'cz' + reverseStringWithSalt(formData.merchantId) + 'cz',
+      location: 'dc' + reverseStringWithSalt(formData.geographicalLocation) + 'cd'
     };
   
     // Full combined encryption (mock)
@@ -49,21 +51,40 @@ export default function Home() {
       encryptedFields.timestamp +
       encryptedFields.merchantId +
       encryptedFields.location
-    ) ;
+    );
   
     return { encryptedFields, fullEncrypted };
   };
   
-  
+  // 1. Define types
+type EncryptedFields = {
+  amount: string;
+  timestamp: string;
+  merchantId: string;
+  location: string;
+};
 
-  const handleEncryptData = () => {
-    setEncryptLoading(true);
-    setTimeout(() => {
-      const encrypted = generateEncryptedData();
-      setEncryptedData(encrypted);
-      setEncryptLoading(false);
-    }, 1500);
-  };
+type EncryptedDataState = {
+  encryptedFields: EncryptedFields | null; // can be null initially
+  fullEncrypted: string;
+};
+
+// 2. Initialize state with the type
+const [encryptedData, setEncryptedData] = useState<EncryptedDataState>({
+  encryptedFields: null,
+  fullEncrypted: '',
+});
+
+// 3. Your encrypt handler now works
+const handleEncryptData = () => {
+  setEncryptLoading(true);
+  setTimeout(() => {
+    const encrypted = generateEncryptedData();
+    setEncryptedData(encrypted); // ✅ TypeScript is happy now
+    setEncryptLoading(false);
+  }, 1500);
+};
+
 
   const handleShowEncryptedData = () => {
     if (!encryptedData.encryptedFields) {
@@ -92,37 +113,46 @@ export default function Home() {
     setPasswordError('');
   };
 
+  type FraudResult = {
+    probability: number;
+    isFraudulent: boolean;
+    confidence: 'Low' | 'Medium' | 'High';
+  };
+
   const handleFraudDetection = () => {
     setFraudLoading(true);
     setTimeout(() => {
-      let amount = parseFloat(formData.transactionAmount);
-      let merchantId = formData.merchantId.toLowerCase();
-      let fraudProbability = Math.random() * 100;
-      
+      const amount = parseFloat(formData.transactionAmount); // use const
+      const merchantId = formData.merchantId.toLowerCase();    // use const
+      let fraudProbability = Math.random() * 100;             // keep let because we modify it
+  
       // Enhanced fraud detection logic
       if (amount > 5000) fraudProbability += 20;
       if (amount > 10000) fraudProbability += 30;
       if (merchantId.includes('unknown') || merchantId.includes('temp')) fraudProbability += 40;
       fraudProbability = Math.min(fraudProbability, 95);
-
+  
       setFraudResult({
         probability: Math.round(fraudProbability),
         isFraudulent: fraudProbability > 50,
         confidence: fraudProbability > 80 ? 'High' : fraudProbability > 50 ? 'Medium' : 'Low'
       });
+  
       setShowResult(true);
       setFraudLoading(false);
     }, 2000);
   };
-
+  
+  
   const handleDateTimeClick = () => {
     setShowDatePicker(!showDatePicker);
   };
 
-  const handleDateTimeChange = (e) => {
+  const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleInputChange(e);
     // Keep the picker open by not automatically closing it
   };
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -179,24 +209,7 @@ export default function Home() {
                     onChange={handleDateTimeChange}
                     onClick={handleDateTimeClick}
                     className="w-full px-4 py-3 border text-gray-800 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    style={{ 
-                      colorScheme: 'light',
-                      // Keep the picker open by preventing default behavior
-                    }}
                   />
-                  {showDatePicker && (
-                    <div className="absolute top-full left-0 mt-1 z-10 bg-white border border-gray-300 rounded-lg shadow-lg p-2">
-                      <button
-                        onClick={() => setShowDatePicker(false)}
-                        className="text-xs text-gray-500 hover:text-gray-700 mb-2 block"
-                      >
-                        Click to close date picker
-                      </button>
-                      <p className="text-xs text-gray-600">
-                        Date picker remains open for multiple selections
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -392,11 +405,11 @@ export default function Home() {
                   <div className="text-center py-8 text-gray-500">
                     <Lock className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                     {!encryptedData.encryptedFields ? (
-                      <p>Click "Encrypt Data" first, then "Show Encrypted Data"</p>
+                      <p>Click &quot;Encrypt Data&quot; first, then &quot;Show Encrypted Data&quot;</p>
                     ) : (
                       <div>
                         <p className="mb-2">Encrypted data is ready!</p>
-                        <p className="text-sm">Click "Show Encrypted Data" and enter password to view</p>
+                        <p className="text-sm">Click &quot;Show Encrypted Data&quot; and enter password to view</p>
                       </div>
                     )}
                   </div>
@@ -474,7 +487,7 @@ export default function Home() {
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <Shield className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>Click "Detect Fraud" to analyze transaction</p>
+                    <p>Click &quot;Detect Fraud&quot; to analyze transaction</p>
                   </div>
                 )}
               </div>
