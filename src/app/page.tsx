@@ -320,7 +320,7 @@ export default function Home() {
 
       console.log('Sending encrypted data to API:', apiRequestData);
 
-      const response = await fetch('https://ce228314935e.ngrok-free.app/predict', {
+      const response = await fetch('https://764db57e7346.ngrok-free.app/predict', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
